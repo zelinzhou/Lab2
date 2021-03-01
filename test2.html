@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+
+<html>
+
+
+  <head>
+    <title>Lab2</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+
+
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+
+
+
+
+  </head>
+  <body>
+    <div id="mapid" style="width: 1900px; height: 950px;"></div>
+
+    <script>
+
+
+      //var mymap = L.map('mapid').setView([51.505, -0.09], 13);   London
+    	var mymap = L.map('mapid').setView([51.0447,-114.0719], 12);
+
+
+
+
+    	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+    		maxZoom: 18,
+    		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+    			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    		id: 'mapbox/streets-v11',
+    		tileSize: 512,
+    		zoomOffset: -1
+    	}).addTo(mymap);
+
+
+      //add marker
+      var marker1 = L.marker([50.002,-105.34]).addTo(mymap);
+
+      //add circle
+      var circle = L.circle([51.0,-112.2],{
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.5,
+        radius:500
+      }).addTo(mymap);
+//pop up on 'marker'
+      marker1.bindPopup("Hello");
+
+
+
+      //add a event which tells the position you clicked on the map
+      var popup = L.popup();
+
+    function onMapClick(e) {
+        popup
+            .setLatLng(e.latlng)
+            .setContent("You clicked the map at " + e.latlng.toString())
+            .openOn(mymap);
+    }
+
+    mymap.on('click', onMapClick);
+
+
+
+//GeoJSON
+    var geojsonFeature = {
+    "type": "Feature",
+    "properties": {
+        "name": "Coors Field",
+        "amenity": "Baseball Stadium",
+        "popupContent": "This is where the Rockies play!"
+    },
+    "geometry": {
+        "type": "Point",
+        "coordinates": [-114.75621,51.99404]
+    }
+
+
+
+};
+
+//L.geoJSON(geojsonFeature).addTo(mymap);
+$.ajax({
+    url: "https://data.calgary.ca/resource/c2es-76ed.json",
+    type: "GET",
+    data: {
+      "$limit" : 5000,
+
+    }
+}).done(function(data) {
+  alert("Retrieved " + data.length + " records from the dataset!");
+  console.log(data);
+
+  mylayer.addData(data);
+});
+
+
+
+var mylayer=L.geoJSON().addTo(mymap);
+mylayer.addData(geojsonFeature);
+
+
+
+
+
+
+
+
+
+
+
+
+    </script>
+
+  </body>
+</html>
