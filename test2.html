@@ -19,17 +19,43 @@
    crossorigin=""></script>
 
 
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>
+
 
 
   </head>
   <body>
-    <div id="mapid" style="width: 1900px; height: 950px;"></div>
+    <div id="mapid" style="width: 1600px; height: 800px;"></div>
+
+    <h2> Give issueddate range </h2>
+
+    <input type="date" id="myDate" value="2021-02-25">
+
+    <input type="date" id="myDateend" value ="2021-03-03">
+
+    <button onclick="myFunction()">Filter</button>
+
+
+    <p id="demo"></p>
+
+    <p id="demo2"></p>
+
 
     <script>
+
+  //  window.onload = function(){
 
 
       //var mymap = L.map('mapid').setView([51.505, -0.09], 13);   London
     	var mymap = L.map('mapid').setView([51.0447,-114.0719], 12);
+
+
+            //create an OverlappingMarkerSpiderfier
+            var oms = new OverlappingMarkerSpiderfier(mymap);
+
+
+
+
 
 
 
@@ -42,6 +68,7 @@
     		tileSize: 512,
     		zoomOffset: -1
     	}).addTo(mymap);
+
 
 
       //add marker
@@ -60,20 +87,19 @@
 
 
       //add a event which tells the position you clicked on the map
-      var popup = L.popup();
+      //var popup = L.popup();
+    //function onMapClick(e) {
+        //popup
+            //.setLatLng(e.latlng)
+            //.setContent("You clicked the map at " + e.latlng.toString())
+            //.openOn(mymap);
+    //}
 
-    function onMapClick(e) {
-        popup
-            .setLatLng(e.latlng)
-            .setContent("You clicked the map at " + e.latlng.toString())
-            .openOn(mymap);
-    }
-
-    mymap.on('click', onMapClick);
-
+    //mymap.on('click', onMapClick);
 
 
-//GeoJSON
+
+//GeoJSON feature
     var geojsonFeature = {
     "type": "Feature",
     "properties": {
@@ -86,29 +112,151 @@
         "coordinates": [-114.75621,51.99404]
     }
 
-
-
 };
 
-//L.geoJSON(geojsonFeature).addTo(mymap);
+
+//GeoJson object
+var myLines = [{
+    "type": "LineString",
+    "coordinates": [[ -114,51.004], [ -114.2,51], [ -114.1,51.2]]
+}, {
+    "type": "LineString",
+    "coordinates": [[ -114,51.004], [ -114.2,51], [ -114.1,51.2]]
+}];
+
+
+
+//GeoJson layer
+var mylayer=L.geoJSON().addTo(mymap);
+mylayer.addData(geojsonFeature);
+mylayer.addData(myLines);
+
+
+
+//var issueddatestart=prompt ("please give the start date","2012-02-25");
+
+
+
+
+
+//Get GeoJson file from URL
 $.ajax({
-    url: "https://data.calgary.ca/resource/c2es-76ed.json",
+    url: "https://data.calgary.ca/resource/c2es-76ed.geoJSON",
     type: "GET",
     data: {
-      "$limit" : 5000,
+      "$limit" : 1000,
 
     }
 }).done(function(data) {
-  alert("Retrieved " + data.length + " records from the dataset!");
+  //alert("Retrieved " + data.length + " records from the dataset!");
   console.log(data);
 
-  mylayer.addData(data);
+
+function onEachFeature(feature,layer){
+  layer.bindPopup("issueddate: "+feature.properties.issueddate+"<br>"+"workclassgroup: "+feature.properties.workclassgroup)
+}
+
+// add the attributes of the API data to the filter
+var geojson = L.geoJSON(data,{
+  onEachFeature: onEachFeature
+});
+
+geojson.addTo(mymap);
+
 });
 
 
 
-var mylayer=L.geoJSON().addTo(mymap);
-mylayer.addData(geojsonFeature);
+
+
+
+
+//Once the user clikc the filter button, run the function
+function myFunction (){
+
+  //remove all the previous layers on the map
+  mymap.eachLayer(function (layer){
+    mymap.removeLayer(layer);
+  })
+
+
+  //add the base map again
+  L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+      'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    id: 'mapbox/streets-v11',
+    tileSize: 512,
+    zoomOffset: -1
+  }).addTo(mymap);
+
+  //get the user input value
+  var x = document.getElementById("myDate").value;
+ document.getElementById("demo").innerHTML = x;
+
+  var y = document.getElementById("myDateend").value;
+  document.getElementById("demo2").innerHTML = y;
+
+
+
+  //recall the API endpoints with the filter parameter at the end of URL
+  $.ajax({
+      url: "https://data.calgary.ca/resource/c2es-76ed.geoJSON?$where=issueddate > "+"%27"+document.getElementById("demo").innerHTML+"%27"+"and issueddate < "+ "%27"+document.getElementById("demo2").innerHTML+"%27",
+      type: "GET",
+      data: {
+        "$limit" : 1000,
+
+      }
+  }).done(function(data) {
+    //alert("Retrieved " + data.length + " records from the dataset!");
+    console.log(data);
+
+
+
+
+
+  function onEachFeature(feature,layer){
+    layer.bindPopup("issueddate: "+feature.properties.issueddate+"<br>"+"workclassgroup: "+feature.properties.workclassgroup)
+  }
+
+  var geojson = L.geoJSON(data,{
+    onEachFeature: onEachFeature
+  });
+
+  geojson.addTo(mymap);
+
+  });
+
+
+}
+
+
+
+
+
+  var popup = new L.Popup();
+  oms.addListener('click', function(marker) {
+    popup.setContent(marker.desc);
+    popup.setLatLng(marker.getLatLng());
+    mymap.openPopup(popup);
+  })
+
+
+      oms.addListener('spiderfy',function(markers){
+        mymap.closePopup();
+      });
+
+
+
+
+      for (var i = 0; i < window.mapData.length; i ++) {
+        var datum = window.mapData[i];
+        var loc = new L.LatLng(datum.lat, datum.lon);
+        var marker = new L.Marker(loc);
+        marker.desc = datum.d;
+        mymap.addLayer(marker);
+        oms.addMarker(marker);  // <-- here
+      }
 
 
 
@@ -116,12 +264,15 @@ mylayer.addData(geojsonFeature);
 
 
 
+//}
 
 
 
 
 
     </script>
+
+
 
   </body>
 </html>
